@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Публикация новостей</title>
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Создание новости</h1>
+        <form id="newsForm" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="title">Название новости:</label>
+                <input type="text" id="title" name="title" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Текст новости:</label>
+                <div id="editor" style="height: 300px;"></div>
+                <input type="hidden" id="content" name="content">
+            </div>
+            
+            <div class="form-group">
+                <label>Платформы:</label>
+                <div>
+                    <label>
+                        <input type="checkbox" name="platforms" value="telegram"> Telegram
+                    </label>
+                    <label>
+                        <input type="checkbox" name="platforms" value="vk"> VK
+                    </label>
+                    <label>
+                        <input type="checkbox" name="platforms" value="website"> Сайт
+                    </label>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="photos">Фотографии (макс. 4):</label>
+                <input type="file" id="photos" name="photos" multiple accept="image/*">
+            </div>
+            
+            <button type="submit" class="btn">Опубликовать</button>
+        </form>
+    </div>
+
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
