@@ -20,13 +20,10 @@ TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 TELEGRAM_CHANNEL = os.getenv('TELEGRAM_CHANNEL')
 
 def clean_telegram_html(html):
-    # Удаляем теги <p> и заменяем их переносами строк
-    html = re.sub(r'</?p[^>]*>', '\n', html)
-    
-    # Удаляем другие неподдерживаемые теги, оставляя только базовое форматирование
+    # Парсим HTML через BeautifulSoup
     soup = BeautifulSoup(html, 'html.parser')
-    
-    # Разрешенные теги и их преобразование
+
+    # Замена <strong>, <b>, <em>, <i>, <u>, <s>, <del>, <ins>
     allowed_tags = {
         'b': 'b',
         'strong': 'b',
@@ -41,18 +38,63 @@ def clean_telegram_html(html):
         'code': 'code',
         'pre': 'pre'
     }
-    
+
+    # Обработка заголовков
+    for h in soup.find_all(['h1', 'h2', 'h3']):
+        h.name = 'b'  # Делаем жирным
+        h.append(soup.new_tag('br'))  # Добавляем перенос строки после заголовка
+
+    # Обработка параграфов
+    for p in soup.find_all('p'):
+        p.insert_after(soup.new_tag('br'))
+        p.unwrap()  # Убираем <p>
+
+    # Обработка списков
+    for ul in soup.find_all('ul'):
+        items = ul.find_all('li')
+        new_content = ''
+        for li in items:
+            new_content += f'• {li.get_text(strip=False)}\n'
+        new_tag = soup.new_tag('div')
+        new_tag.string = new_content.strip()
+        ul.replace_with(new_tag)
+
+    for ol in soup.find_all('ol'):
+        items = ol.find_all('li')
+        new_content = ''
+        for idx, li in enumerate(items, 1):
+            new_content += f'{idx}. {li.get_text(strip=False)}\n'
+        new_tag = soup.new_tag('div')
+        new_tag.string = new_content.strip()
+        ol.replace_with(new_tag)
+
+    for li in soup.find_all('li'):
+        li.unwrap()
+
+    # Обработка тегов <br>
+    for br in soup.find_all('br'):
+        br.replace_with('\n')  # Замена <br> на \n
+
+    # Добавление переноса строки перед и после списков
+    for tag in soup.find_all(['ul', 'ol']):
+        # Добавляем перевод строки перед списком
+        if tag.previous_sibling and tag.previous_sibling.name not in ['br', 'p']:
+            tag.insert_before(soup.new_tag('br'))
+
+        # Добавляем перевод строки после списка
+        if tag.next_sibling and tag.next_sibling.name not in ['br', 'p']:
+            tag.insert_after(soup.new_tag('br'))
+
+    # Обработка остальных тегов
     for tag in soup.find_all(True):
-        if tag.name not in allowed_tags:
-            # Неподдерживаемый тег - заменяем его содержимым
-            tag.unwrap()
-        else:
-            # Переименовываем теги в соответствии со стандартом Telegram
+        if tag.name in allowed_tags:
             tag.name = allowed_tags[tag.name]
-    
-    # Преобразуем обратно в строку и удаляем лишние переносы
-    cleaned_html = str(soup)
-    cleaned_html = re.sub(r'\n{3,}', '\n\n', cleaned_html)  # Убираем множественные переносы
+        else:
+            tag.unwrap()  # Удаляем неподдерживаемые теги, оставляя текст
+
+    # Склеиваем все в строку и чистим лишние пробелы/переводы
+    cleaned_html = str(soup).replace('\r', '')
+    cleaned_html = re.sub(r'\n{3,}', '\n\n', cleaned_html)  # Максимум два перевода строки
     return cleaned_html.strip()
 
 async def send_to_telegram(title, content, files):
