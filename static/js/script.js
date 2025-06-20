@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Инициализация редактора
     const quill = new Quill('#editor', {
         modules: {
             toolbar: [
@@ -13,12 +12,10 @@ document.addEventListener('DOMContentLoaded', function() {
         theme: 'snow'
     });
 
-    // Обработка формы
     const form = document.getElementById('newsForm');
     form.addEventListener('submit', async function(e) {
         e.preventDefault();
         
-        // Сохраняем контент из редактора
         document.getElementById('content').value = quill.root.innerHTML;
         
         const formData = new FormData(form);
